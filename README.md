@@ -9,7 +9,19 @@ It provides an expressive and readable syntax for writing tests, and supports bo
 
 To use Wesley in your project, add the following dependencies to your Gradle build file:
 
-`com.violabs:wesley:1.0.0`
+```kotlin
+repository {
+    mavenCentral()
+    maven(url = "https://jitpack.io")
+}
+
+dependencies {
+    // other dependencies
+    testImplementation("com.github.violabs:wesley:1.0.0")
+}
+
+```
+
 
 # Usage
 To use Wesley, create a new test class and extend it with `Wesly()`.
