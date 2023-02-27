@@ -4,6 +4,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals as equals
 
 abstract class Wesley {
@@ -16,16 +17,21 @@ abstract class Wesley {
             expected,
             actual,
             """
-        $message
-        EXPECT: $expected,
-        ACTUAL: $actual
-      """.trimIndent()
+                $message
+                EXPECT: $expected,
+                ACTUAL: $actual
+            """.trimIndent()
         )
     }
 
     fun <MOCK, R> verifyMock(mock: MOCK, returnItem: R, times: Int = 1, mockCall: (MOCK) -> R) {
         whenever(mockCall(mock)).thenReturn(returnItem)
         verifiable.add { mockCall(verify(mock, times(times))) }
+    }
+
+    fun <MOCK> verifyThrows(mock: MOCK, throwable: Throwable, times: Int = 1, mockCall: (MOCK) -> Unit) {
+        whenever(mockCall(mock)).thenThrow(throwable)
+        verifiable.add { mockCall(verify(mock, times(times)))}
     }
 
     fun <T> test(runnable: CrushIt<T>.() -> Unit) {
@@ -46,19 +52,23 @@ abstract class Wesley {
         cleanup()
     }
 
+    inline fun <reified E : Exception> testThrows(runnable: () -> Unit) {
+        assertFailsWith(E::class, runnable)
+    }
+
     private fun cleanup() {
         verifiable.clear()
         mockCalls.clear()
     }
 
     class CrushIt<T> {
-        var expected: T? = null
-        var actual: T? = null
+        private var expected: T? = null
+        private var actual: T? = null
         var expectCall: () -> Unit = {}
         var mockSetupCall: () -> Unit = {}
         var wheneverCall: () -> Unit = {}
         var thenCall: () -> Unit = this::defaultThenEquals
-        var expectedExists = false
+        private var expectedExists = false
 
         fun expect(givenFn: () -> T?) {
             if (expectedExists) throw Exception("Can only have expect or given and not both!!")

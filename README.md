@@ -29,9 +29,10 @@ To use Wesley, create a new test class and extend it with `Wesly()`.
 The functions defined run in a specific order, but where you defined them doesn't matter. You can have
 `whenever()` before or after `expect` and so on.
 
-##Defining Tests
+## Defining Tests
 
-To define a test, create a new function in your test class and call the `test()` function. Within the `test()` function, you can define the behavior of the test using a lambda expression.
+To define a test, create a new function in your test class and call the `test()` function. 
+Within the `test()` function, you can define the behavior of the test using a lambda expression.
 
 Here's an example test:
 
@@ -65,6 +66,16 @@ fun `test something`() = test<String> {
 In this test, Wesley will automatically check that the expected and actual values are equal. 
 If they are not equal, the test will fail.
 
+### Testing Exceptions
+
+There is a simple test function that wraps the main content in an exception assertion. Here is an example:
+
+```kotlin
+fun `test something throws exception`() = testThrows<IndexOutOfBoundsException> {
+    focus.doSomething()
+}
+```
+
 ## Mocking
 Wesley supports mocking using the `verifyMock()` function. This function takes a mock object, 
 a return value, and a lambda expression that defines the behavior of the mock.
@@ -79,7 +90,7 @@ class MyTest : Wesley() {
     val focus = Focus(mockObject)
     
     
-    fun `test something`() = test<Unit> {
+    fun `test something`() = test<String> {
         setupMocks {
             verifyMock(mockObject, returnedItem = "Hello, world!") { mock ->
                 mock.someMethod()
@@ -88,6 +99,29 @@ class MyTest : Wesley() {
 
         expect { "Hello, world!" }
 
+        whenever { focus.doTheThing() }
+    }
+}
+```
+
+### Throwing Exceptions
+
+If you need to throw an exception, you can utilize the `verifyThrows` method.
+
+```kotlin
+class MyTest : Wesley() {
+    val mockObject = mock<MyClass>()
+    val focus = Focus(mockObject)
+    
+    fun `test something`() = test<String> {
+        setupMocks {
+            verifyThrows(mockObject, Exception("Error")) { mock ->
+                mock.someMethod()
+            }
+        }
+        
+        expect { "Hello, world!" }
+        
         whenever { focus.doTheThing() }
     }
 }
