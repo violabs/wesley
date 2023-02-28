@@ -17,7 +17,7 @@ repository {
 
 dependencies {
     // other dependencies
-    testImplementation("com.github.violabs:wesley:1.0.0")
+    testImplementation("com.github.violabs:wesley:1.1.1")
 }
 
 ```
@@ -38,13 +38,17 @@ Here's an example test:
 
 ```kotlin
 fun `test something`() = test<String> {
+    setup { println("Optional START") }
+    
     expect { "Hello, world!" }
 
     whenever { "Hello, world!" }
 
     thenEquals("The strings should be equal") { expected, actual ->
-        assertEquals(expected, actual)
+        println("do other stuff $expected $actual")
     }
+
+    tearDown { println("Optional END") }
 }
 ```
 

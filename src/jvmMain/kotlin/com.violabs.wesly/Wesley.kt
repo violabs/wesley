@@ -4,7 +4,9 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.assertEquals as equals
 
 abstract class Wesley {
@@ -39,10 +41,12 @@ abstract class Wesley {
 
         runnable(spec)
 
+        spec.setupCall()
         spec.expectCall()
         spec.mockSetupCall()
         spec.wheneverCall()
         spec.thenCall()
+        spec.tearDownCall()
 
         verifiable.forEach { it.invoke() }
 
@@ -64,17 +68,25 @@ abstract class Wesley {
     class CrushIt<T> {
         private var expected: T? = null
         private var actual: T? = null
-        var expectCall: () -> Unit = {}
-        var mockSetupCall: () -> Unit = {}
-        var wheneverCall: () -> Unit = {}
-        var thenCall: () -> Unit = this::defaultThenEquals
+        internal var setupCall: () -> Unit = {}
+        internal var expectCall: () -> Unit = {}
+        internal var mockSetupCall: () -> Unit = {}
+        internal var wheneverCall: () -> Unit = {}
+        internal var thenCall: () -> Unit = this::defaultThenEquals
+        internal var tearDownCall: () -> Unit = {}
         private var expectedExists = false
+
+        fun setup(setupFn: () -> Unit) {
+            this.setupCall = setupFn
+        }
 
         fun expect(givenFn: () -> T?) {
             if (expectedExists) throw Exception("Can only have expect or given and not both!!")
             expectedExists = true
             expectCall = { expected = givenFn() }
         }
+
+        fun expectNull() = expect { null }
 
         fun given(givenFn: () -> T?) {
             if (expectedExists) throw Exception("Can only have expect or given and not both!!")
@@ -114,5 +126,24 @@ abstract class Wesley {
                 println("ACTUAL: $actual")
             }
         }
+
+        fun tearDown(tearDownFn: () -> Unit) {
+            this.tearDownCall = tearDownFn
+        }
     }
+}
+
+fun Wesley.CrushIt<Boolean>.expectTrue() = expect { true }
+fun Wesley.CrushIt<Boolean>.expectFalse() = expect { false }
+
+fun Wesley.CrushIt<String>.thenContains() = then { e, a ->
+    val existingE: String = e ?: return@then assertTrue(false)
+    val existingA: String = a ?: return@then assertTrue(false)
+    assertContains(existingE, existingA)
+}
+
+fun Wesley.CrushIt<String>.expectContains(givenFn: () -> String?) {
+    this.expect(givenFn)
+
+    thenContains()
 }
