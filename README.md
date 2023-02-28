@@ -48,7 +48,7 @@ fun `test something`() = test<String> {
         println("do other stuff $expected $actual")
     }
 
-    tearDown { println("Optional END") }
+    teardown { println("Optional END") }
 }
 ```
 

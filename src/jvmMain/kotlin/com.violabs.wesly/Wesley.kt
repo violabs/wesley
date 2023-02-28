@@ -127,7 +127,7 @@ abstract class Wesley {
             }
         }
 
-        fun tearDown(tearDownFn: () -> Unit) {
+        fun teardown(tearDownFn: () -> Unit) {
             this.tearDownCall = tearDownFn
         }
     }
