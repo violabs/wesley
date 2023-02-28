@@ -1,5 +1,6 @@
 package com.violabs.wesly
 
+import org.mockito.Mockito
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -10,9 +11,11 @@ import kotlin.test.assertTrue
 import kotlin.test.assertEquals as equals
 
 abstract class Wesley {
-    var mocks = listOf<Any>()
+    val mocks: MutableList<Any> = mutableListOf()
     private val mockCalls = mutableListOf<() -> Unit>()
     private val verifiable = mutableListOf<() -> Unit>()
+
+    inline fun <reified T> mock(): T = Mockito.mock(T::class.java).also { mocks.add(it as Any) }
 
     fun <U> assertEquals(expected: U, actual: U, message: String? = null) {
         equals(
