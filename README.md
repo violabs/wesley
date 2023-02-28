@@ -17,7 +17,7 @@ repository {
 
 dependencies {
     // other dependencies
-    testImplementation("com.github.violabs:wesley:1.1.1")
+    testImplementation("com.github.violabs:wesley:1.1.2")
 }
 
 ```
