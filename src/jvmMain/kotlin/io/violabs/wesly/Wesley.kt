@@ -71,10 +71,6 @@ abstract class Wesley {
         cleanup()
     }
 
-    inline fun <reified E : Exception> testThrows(runnable: () -> Unit) {
-        assertFailsWith(E::class, runnable)
-    }
-
     private fun cleanup() {
         mockCalls.clear()
     }
@@ -85,7 +81,7 @@ abstract class Wesley {
         internal var setupCall: () -> Unit = {}
         internal var expectCall: () -> Unit = {}
         internal var mockSetupCall: () -> Unit = this::processMocks
-        internal var wheneverCall: () -> Unit = {}
+        var wheneverCall: () -> Unit = {}
         internal var thenCall: () -> Unit = this::defaultThenEquals
         internal var tearDownCall: () -> Unit = {}
         private var expectedExists = false
@@ -117,6 +113,10 @@ abstract class Wesley {
 
         fun whenever(whenFn: () -> T?) {
             wheneverCall = { actual = whenFn() }
+        }
+
+        inline fun <reified U : Throwable> wheneverThrows(crossinline whenFn: () -> T) {
+            wheneverCall = { assertFailsWith<U> { whenFn() } }
         }
 
         fun then(thenFn: (T?, T?) -> Unit) {
