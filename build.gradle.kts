@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.violabs"
-version = "2.0.0"
+version = "2.0.1"
 
 repositories {
     mavenCentral()
@@ -32,9 +32,6 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("io.mockk:mockk:1.13.5")
-                implementation("org.mockito:mockito-core:5.1.1")
-                // https://mvnrepository.com/artifact/org.mockito.kotlin/mockito-kotlin
-                implementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
             }
         }
         val jvmTest by getting
