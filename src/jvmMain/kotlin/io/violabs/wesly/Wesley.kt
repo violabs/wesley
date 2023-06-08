@@ -1,21 +1,20 @@
-package com.violabs.wesly
+package io.violabs.wesly
 
-import org.mockito.Mockito
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
+
+import io.mockk.confirmVerified
+import io.mockk.mockkClass
+import io.mockk.verify
 import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import io.mockk.every as mockkEvery
 import kotlin.test.assertEquals as equals
 
 abstract class Wesley {
-    val mocks: MutableList<Any> = mutableListOf()
-    private val mockCalls = mutableListOf<() -> Unit>()
-    private val verifiable = mutableListOf<() -> Unit>()
+    private val mocks: MutableList<Any> = mutableListOf()
+    private val mockCalls = mutableListOf<MockTask<*>>()
 
-    inline fun <reified T> mock(): T = Mockito.mock(T::class.java).also { mocks.add(it as Any) }
+    inline fun <reified T : Any> mock(): T = mockkClass(type = T::class)
 
     fun <U> assertEquals(expected: U, actual: U, message: String? = null) {
         equals(
@@ -29,14 +28,25 @@ abstract class Wesley {
         )
     }
 
-    fun <MOCK, R> verifyMock(mock: MOCK, returnItem: R, times: Int = 1, mockCall: (MOCK) -> R) {
-        whenever(mockCall(mock)).thenReturn(returnItem)
-        verifiable.add { mockCall(verify(mock, times(times))) }
+    class MockTask<T : Any>(
+        val mockCall: () -> T?,
+        var returnedItem: T? = null,
+        var throwable: Throwable? = null
+    ) {
+
+        infix fun returns(returnItem: T) {
+            returnedItem = returnItem
+        }
+
+        infix fun throws(throwable: Throwable) {
+            this.throwable = throwable
+        }
     }
 
-    fun <MOCK> verifyThrows(mock: MOCK, throwable: Throwable, times: Int = 1, mockCall: (MOCK) -> Unit) {
-        whenever(mockCall(mock)).thenThrow(throwable)
-        verifiable.add { mockCall(verify(mock, times(times)))}
+    fun <T : Any> every(mockCall: () -> T?): MockTask<T> {
+        val task = MockTask(mockCall)
+        mockCalls.add(task)
+        return task
     }
 
     fun <T> test(runnable: CrushIt<T>.() -> Unit) {
@@ -51,11 +61,13 @@ abstract class Wesley {
         spec.thenCall()
         spec.tearDownCall()
 
-        verifiable.forEach { it.invoke() }
+        mockCalls.forEach {
+            verify { it.mockCall() }
+        }
 
         if (mocks.isEmpty()) return
 
-        verifyNoMoreInteractions(*mocks.toTypedArray())
+        confirmVerified(*mocks.toTypedArray())
         cleanup()
     }
 
@@ -64,16 +76,15 @@ abstract class Wesley {
     }
 
     private fun cleanup() {
-        verifiable.clear()
         mockCalls.clear()
     }
 
-    class CrushIt<T> {
+    inner class CrushIt<T> {
         private var expected: T? = null
         private var actual: T? = null
         internal var setupCall: () -> Unit = {}
         internal var expectCall: () -> Unit = {}
-        internal var mockSetupCall: () -> Unit = {}
+        internal var mockSetupCall: () -> Unit = this::processMocks
         internal var wheneverCall: () -> Unit = {}
         internal var thenCall: () -> Unit = this::defaultThenEquals
         internal var tearDownCall: () -> Unit = {}
@@ -98,7 +109,10 @@ abstract class Wesley {
         }
 
         fun setupMocks(mockSetupFn: () -> Unit) {
-            mockSetupCall = mockSetupFn
+            mockSetupCall = {
+                mockSetupFn()
+                processMocks()
+            }
         }
 
         fun whenever(whenFn: () -> T?) {
@@ -132,6 +146,24 @@ abstract class Wesley {
 
         fun teardown(tearDownFn: () -> Unit) {
             this.tearDownCall = tearDownFn
+        }
+
+        private fun processMocks() {
+            val (throwables, runnables) = mockCalls.partition { it.throwable != null }
+
+            throwables.onEach { mockkEvery { it.mockCall.invoke() } throws it.throwable!! }.count().also {
+                println("Throwable amount: $it")
+            }
+
+            val (callOnly, returnable) = runnables.partition { it.returnedItem == null }
+
+            callOnly.onEach { mockkEvery { it.mockCall.invoke() } }.count().also {
+                println("Null amount: $it")
+            }
+
+            returnable.onEach { mockkEvery { it.mockCall.invoke() } returns it.returnedItem!! }.count().also {
+                println("Returnable amount: $it")
+            }
         }
     }
 }
