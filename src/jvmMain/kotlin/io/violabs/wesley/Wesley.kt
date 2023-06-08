@@ -1,4 +1,4 @@
-package io.violabs.wesly
+package io.violabs.wesley
 
 
 import io.mockk.confirmVerified
