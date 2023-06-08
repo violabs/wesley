@@ -3,8 +3,8 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.violabs"
-version = "1.1.2"
+group = "io.violabs"
+version = "2.0.0"
 
 repositories {
     mavenCentral()
@@ -31,6 +31,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.mockk:mockk:1.13.5")
                 implementation("org.mockito:mockito-core:5.1.1")
                 // https://mvnrepository.com/artifact/org.mockito.kotlin/mockito-kotlin
                 implementation("org.mockito.kotlin:mockito-kotlin:4.1.0")

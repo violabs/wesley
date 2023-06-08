@@ -2,7 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Wesley is a lightweight testing framework that emulates some functionality of [Spock](http://spockframework.org/). 
+Wesley is a lightweight testing framework that emulates some functionality of [Spock](http://spockframework.org/)
+ with the functionality of [Mockk](https://mockk.io). 
 It provides an expressive and readable syntax for writing tests, and supports both unit and integration testing.
 
 ## Installation
@@ -17,7 +18,7 @@ repository {
 
 dependencies {
     // other dependencies
-    testImplementation("com.github.violabs:wesley:1.1.2")
+    testImplementation("com.github.violabs:wesley:{version}")
 }
 
 ```
@@ -81,12 +82,11 @@ fun `test something throws exception`() = testThrows<IndexOutOfBoundsException> 
 ```
 
 ## Mocking
-Wesley supports mocking using the `verifyMock()` function. This function takes a mock object, 
-a return value, and a lambda expression that defines the behavior of the mock.
+Wesley supports mocking similar to Mockk. Under the hood it uses Mockk, but it provides a way
+to not have to call verify on every mock object. Wesley will verify all mocks at the end of the test
+and that there are no more interactions with the mock objects.
 
-To set up a mock object, you can define a function using the `setupMocks()` function. 
-Within the `setupMocks()` function, you can create mock objects and define their behavior
-using the `verifyMock()` function. Here's an example:
+It is limited compared to Mockk, but you are able to inter mix the library.
 
 ```kotlin
 class MyTest : Wesley() {
@@ -95,10 +95,11 @@ class MyTest : Wesley() {
     
     
     fun `test something`() = test<String> {
+        every { mockObject.someMethod() } returns "Hello, world!"
+        
+        // or you can let the build do the work with this nested function
         setupMocks {
-            verifyMock(mockObject, returnedItem = "Hello, world!") { mock ->
-                mock.someMethod()
-            }
+            every { mockObject.someMethod() } returns "Hello, world!"
         }
 
         expect { "Hello, world!" }
@@ -110,7 +111,7 @@ class MyTest : Wesley() {
 
 ### Throwing Exceptions
 
-If you need to throw an exception, you can utilize the `verifyThrows` method.
+You can provide an expected thrown item by using the throws mock function.
 
 ```kotlin
 class MyTest : Wesley() {
@@ -118,10 +119,11 @@ class MyTest : Wesley() {
     val focus = Focus(mockObject)
     
     fun `test something`() = test<String> {
+        every { mockObject.someMethod() } throws Exception("Error")
+
+        // or you can let the build do the work with this nested function
         setupMocks {
-            verifyThrows(mockObject, Exception("Error")) { mock ->
-                mock.someMethod()
-            }
+            every { mockObject.someMethod() } throws Exception("Error")
         }
         
         expect { "Hello, world!" }
@@ -131,12 +133,11 @@ class MyTest : Wesley() {
 }
 ```
 
-In this example, we create a mock object using the `mock()` function from *Wesley*, and define its 
-behavior using the `verifyMock()` function. We then use the `expect()` function to define the expected output, 
-and the `whenever()` function to define the actual output, which calls the mocked someMethod() function.
+# Future Features
 
-If you don't explicitly define the behavior of a mocked object using `verifyMock()`, 
-the default behavior is to return `null` for any method call.
+- [ ] WebFlux support (blocking) : This will help with converting old projects into newer forms.
+- [ ] WebFlux support (non-blocking) : Utilize Coroutines to help with testing.
+- [ ] Tests around the library itself - but how to catch test throws
 
 # Contribution Guidelines
 Contributions to Wesley are welcome! If you'd like to report a bug, request a feature, or submit a pull request, please see our contribution guidelines.
